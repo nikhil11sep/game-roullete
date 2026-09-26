@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lucky Roulette</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Casino table</p>
+          <h1>Lucky Roulette</h1>
+        </div>
+        <div id="topSpinStats" class="top-spin-stats" aria-live="polite">
+          <span>Last spin</span>
+          <strong id="topSpinStatsValue">No spin yet</strong>
+        </div>
+        <div id="totalProfitStats" class="top-spin-stats" aria-live="polite">
+          <span>Total profit</span>
+          <strong id="totalProfitStatsValue">$0</strong>
+        </div>
+        <div class="topbar-controls">
+          <div class="initial-balance-box">
+            <span class="initial-balance-title">Initial balances</span>
+            <div class="initial-balance-grid">
+              <label><span class="initial-balance-player-name" data-player-id="player-1">Nikhil</span> <input class="initial-balance-input" data-player-id="player-1" type="number" min="0" max="1000000" value="200" /></label>
+              <label><span class="initial-balance-player-name" data-player-id="player-2">Pallavi</span> <input class="initial-balance-input" data-player-id="player-2" type="number" min="0" max="1000000" value="200" /></label>
+              <label><span class="initial-balance-player-name" data-player-id="player-3">Harshita</span> <input class="initial-balance-input" data-player-id="player-3" type="number" min="0" max="1000000" value="200" /></label>
+              <label><span class="initial-balance-player-name" data-player-id="player-4">Bansal</span> <input class="initial-balance-input" data-player-id="player-4" type="number" min="0" max="1000000" value="200" /></label>
+            </div>
+            <button id="applyInitialBalancesBtn" class="secondary-btn" type="button">Apply balances</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="players-panel" aria-label="Players">
+        <div class="players-heading">
+          <h2>Players</h2>
+          <span>Select a player to place or remove their bets</span>
+        </div>
+        <div id="playerCards" class="player-cards"></div>
+      </section>
+
+      <main class="game-layout">
+        <section class="wheel-panel">
+          <div class="wheel-frame">
+            <div class="wheel-rail"></div>
+            <div id="wheel" class="wheel" aria-label="Roulette wheel"></div>
+            <div id="wheelCenterNumber" class="wheel-center">--</div>
+            <div class="wheel-pointer"></div>
+          </div>
+
+          <div class="result-box">
+            <span>Last result</span>
+            <div id="resultNumber" class="result-number">--</div>
+            <div id="resultColor" class="result-color">Wait for the spin</div>
+            <div id="resultWinners" class="result-winners" aria-live="polite"></div>
+            <div id="spinSummary" class="spin-summary" aria-live="polite">
+              Place your bet and spin to see the result.
+            </div>
+          </div>
+
+        </section>
+
+        <section class="table-panel">
+          <div class="table-header">
+            <h2>Roulette table</h2>
+            <button id="clearBetsBtn" class="secondary-btn">Clear bets</button>
+          </div>
+
+            <div id="rouletteBoard" class="roulette-board" aria-label="Roulette board"></div>
+          </section>
+
+        <aside class="controls-panel">
+          <div class="current-player-box">
+            Betting for <strong id="activePlayerName">Player 1</strong>
+          </div>
+
+          <div class="action-row">
+            <button id="placeBetBtn" class="primary-btn">Place bet</button>
+            <button id="spinBtn" class="spin-btn">Spin wheel</button>
+          </div>
+
+          <div class="bet-controls-row">
+            <div class="bet-box">
+              <label for="betAmount">Bet amount</label>
+              <input id="betAmount" type="number" min="1" max="500" value="10" />
+            </div>
+
+            <div class="placed-bets-box">
+              <div class="placed-bets-header">
+                <h3>Placed bets</h3>
+                <button id="repeatBetsBtn" class="secondary-btn" type="button">Repeat previous</button>
+              </div>
+              <ul id="betList" class="bet-list"></ul>
+            </div>
+          </div>
+
+          <div class="probability-box" aria-live="polite">
+              <div class="probability-heading">
+                <span>Spin sample statistics</span>
+                <small id="sampleSizeLabel">1000 spins sampled</small>
+              </div>
+              <div class="probability-grid">
+                <div class="probability-item red-stat">
+                  <span>Red</span>
+                  <strong id="redProbability">0%</strong>
+                  <small id="redCount">0 of 10</small>
+                </div>
+                <div class="probability-item black-stat">
+                  <span>Black</span>
+                  <strong id="blackProbability">0%</strong>
+                  <small id="blackCount">0 of 10</small>
+                </div>
+                <div class="probability-item green-stat">
+                  <span>Zero</span>
+                  <strong id="zeroProbability">0%</strong>
+                  <small id="zeroCount">0 of 10</small>
+                </div>
+                <div class="probability-item odd-stat">
+                  <span>Odd</span>
+                  <strong id="oddProbability">0%</strong>
+                  <small id="oddCount">0 of 10</small>
+                </div>
+                <div class="probability-item even-stat">
+                  <span>Even</span>
+                  <strong id="evenProbability">0%</strong>
+                  <small id="evenCount">0 of 10</small>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </main>
+
+      <section class="history-panel">
+        <div class="history-header">
+          <h3>Recent spins</h3>
+        </div>
+        <ul id="historyList" class="history-list"></ul>
+      </section>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
