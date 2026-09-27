@@ -87,6 +87,8 @@
             <div class="bet-box">
               <label for="betAmount">Bet amount</label>
               <input id="betAmount" type="number" min="1" max="500" value="10" />
+              <button id="cornerBetBtn" class="secondary-btn corner-bet-toggle" type="button" aria-pressed="false">Corner bet: Off</button>
+              <small id="cornerBetHelp" class="corner-bet-help" aria-live="polite">Select four adjacent numbers to make a corner bet. Pays 8:1.</small>
             </div>
 
             <div class="placed-bets-box">
@@ -128,6 +130,16 @@
                   <span>Even</span>
                   <strong id="evenProbability">0%</strong>
                   <small id="evenCount">0 of 10</small>
+              </div>
+              <div class="probability-item low-stat">
+                <span>Low (1–18)</span>
+                <strong id="lowProbability">0%</strong>
+                <small id="lowCount">0 of 10</small>
+              </div>
+              <div class="probability-item high-stat">
+                <span>High (19–36)</span>
+                <strong id="highProbability">0%</strong>
+                <small id="highCount">0 of 10</small>
               </div>
             </div>
           </div>

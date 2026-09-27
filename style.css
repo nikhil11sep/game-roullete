@@ -573,6 +573,16 @@ h1 {
   color: #e7ddff;
 }
 
+.low-stat {
+  background: rgba(28, 194, 107, 0.12);
+  color: #dfffee;
+}
+
+.high-stat {
+  background: rgba(255, 200, 87, 0.12);
+  color: #ffe7ad;
+}
+
 .table-panel {
   padding: 18px 20px;
   grid-column: 1 / -1;
@@ -788,6 +798,13 @@ h1 {
   transform: scale(1.02);
 }
 
+.board-cell.corner-selected {
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 0 0 3px #c7a3f5, 0 0 14px rgba(181, 138, 230, 0.6);
+  transform: scale(1.04);
+}
+
 .board-cell.winning-number {
   position: relative;
   box-shadow: 0 0 0 3px var(--gold), 0 0 20px rgba(255, 200, 87, 0.55);
@@ -849,6 +866,22 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.corner-bet-toggle.active {
+  border-color: #b58ae6;
+  background: #7045a8;
+  color: #ffffff;
+}
+
+.corner-bet-help {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.roulette-board.corner-bet-mode .board-cell:not(.board-zero-cell) {
+  cursor: crosshair;
 }
 
 .bet-box label,

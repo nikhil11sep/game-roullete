@@ -27,8 +27,14 @@ const oddProbability = document.getElementById('oddProbability');
 const evenProbability = document.getElementById('evenProbability');
 const oddCount = document.getElementById('oddCount');
 const evenCount = document.getElementById('evenCount');
+const lowProbability = document.getElementById('lowProbability');
+const highProbability = document.getElementById('highProbability');
+const lowCount = document.getElementById('lowCount');
+const highCount = document.getElementById('highCount');
 const sampleSizeLabel = document.getElementById('sampleSizeLabel');
 const applyInitialBalancesBtn = document.getElementById('applyInitialBalancesBtn');
+const cornerBetBtn = document.getElementById('cornerBetBtn');
+const cornerBetHelp = document.getElementById('cornerBetHelp');
 
 const numberSequence = [
   0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5,
@@ -44,6 +50,8 @@ const state = {
   ],
   currentPlayerId: 'player-1',
   selectedNumber: null,
+  cornerBetMode: false,
+  cornerNumbers: [],
   activeBet: { type: 'color', value: 'red' },
   spinInProgress: false,
   wheelRotation: 0,
@@ -54,6 +62,8 @@ const state = {
     green: 0,
     odd: 0,
     even: 0,
+    low: 0,
+    high: 0,
     total: 0
   }
 };
@@ -77,6 +87,7 @@ function getRandomWinningNumber() {
 
 function getNumbersForBet(bet) {
   if (bet.type === 'straight') return [bet.number];
+  if (bet.type === 'corner') return [...(bet.numbers || [])];
   if (bet.type === 'color') {
     return Array.from({ length: 37 }, (_, number) => number)
       .filter((number) => getColor(number) === bet.value);
@@ -112,13 +123,25 @@ function getAllBets() {
 }
 
 function runInitialProbabilitySample() {
+  const sampledSpins = [];
   for (let spin = 0; spin < 1000; spin += 1) {
     const number = Math.floor(Math.random() * 37);
+    sampledSpins.push({
+      number,
+      color: getColor(number),
+      bets: [],
+      isSample: true
+    });
     state.sample[getColor(number)] += 1;
-    if (number > 0) state.sample[number % 2 === 1 ? 'odd' : 'even'] += 1;
+    if (number > 0) {
+      state.sample[number % 2 === 1 ? 'odd' : 'even'] += 1;
+      state.sample[number <= 18 ? 'low' : 'high'] += 1;
+    }
     state.sample.total += 1;
   }
 
+  state.history = sampledSpins.slice(-20).reverse();
+  renderHistory();
   renderSampleStatistics();
 }
 
@@ -131,23 +154,31 @@ function renderSampleStatistics() {
   zeroProbability.textContent = percentage(state.sample.green);
   oddProbability.textContent = percentage(state.sample.odd, nonZeroTotal);
   evenProbability.textContent = percentage(state.sample.even, nonZeroTotal);
+  lowProbability.textContent = percentage(state.sample.low, nonZeroTotal);
+  highProbability.textContent = percentage(state.sample.high, nonZeroTotal);
   redCount.textContent = `${state.sample.red} of ${state.sample.total}`;
   blackCount.textContent = `${state.sample.black} of ${state.sample.total}`;
   zeroCount.textContent = `${state.sample.green} of ${state.sample.total}`;
   oddCount.textContent = `${state.sample.odd} of ${nonZeroTotal}`;
   evenCount.textContent = `${state.sample.even} of ${nonZeroTotal}`;
+  lowCount.textContent = `${state.sample.low} of ${nonZeroTotal}`;
+  highCount.textContent = `${state.sample.high} of ${nonZeroTotal}`;
   sampleSizeLabel.textContent = `${state.sample.total} spins sampled`;
 }
 
 function recordSpinInSample(number) {
   state.sample[getColor(number)] += 1;
-  if (number > 0) state.sample[number % 2 === 1 ? 'odd' : 'even'] += 1;
+  if (number > 0) {
+    state.sample[number % 2 === 1 ? 'odd' : 'even'] += 1;
+    state.sample[number <= 18 ? 'low' : 'high'] += 1;
+  }
   state.sample.total += 1;
   renderSampleStatistics();
 }
 
 function formatBetLabel(bet) {
   if (bet.type === 'straight') return `Number ${bet.number}`;
+  if (bet.type === 'corner') return `Corner ${bet.numbers.join(', ')}`;
   if (bet.type === 'color') return bet.value === 'red' ? 'Red' : 'Black';
   if (bet.type === 'parity') return bet.value === 'odd' ? 'Odd' : 'Even';
   if (bet.type === 'range') return bet.value === 'low' ? 'Low (1-18)' : 'High (19-36)';
@@ -164,6 +195,10 @@ function buildRouletteBoard() {
     cell.textContent = number;
     cell.dataset.number = String(number);
     cell.addEventListener('click', () => {
+      if (state.cornerBetMode) {
+        toggleCornerNumber(number);
+        return;
+      }
       state.activeBet = { type: 'straight', value: 'straight' };
       state.selectedNumber = number;
       updateSelectedNumberCell();
@@ -261,7 +296,69 @@ function updateSelectedNumberCell() {
   document.querySelectorAll('.board-cell').forEach((cell) => {
     const isSelected = Number(cell.dataset.number) === state.selectedNumber;
     cell.classList.toggle('selected', isSelected);
+    cell.classList.toggle('corner-selected', state.cornerNumbers.includes(Number(cell.dataset.number)));
   });
+}
+
+function isValidCornerSelection(numbers) {
+  if (numbers.length !== 4 || numbers.includes(0)) return false;
+
+  const rows = [...new Set(numbers.map((number) => ((number - 1) % 3) + 1))].sort();
+  const columns = [...new Set(numbers.map((number) => Math.floor((number - 1) / 3)))].sort();
+  if (rows.length !== 2 || columns.length !== 2 || rows[1] !== rows[0] + 1 || columns[1] !== columns[0] + 1) {
+    return false;
+  }
+
+  return rows.every((row) => columns.every((column) => numbers.includes(column * 3 + row)));
+}
+
+function updateCornerBetMode() {
+  cornerBetBtn.textContent = `Corner bet: ${state.cornerBetMode ? 'On' : 'Off'}`;
+  cornerBetBtn.setAttribute('aria-pressed', String(state.cornerBetMode));
+  cornerBetBtn.classList.toggle('active', state.cornerBetMode);
+  rouletteBoard.classList.toggle('corner-bet-mode', state.cornerBetMode);
+  if (!state.cornerBetMode) {
+    cornerBetHelp.textContent = 'Select four adjacent numbers to make a corner bet. Pays 8:1.';
+  } else if (state.cornerNumbers.length === 4 && isValidCornerSelection(state.cornerNumbers)) {
+    cornerBetHelp.textContent = `Corner ready: ${state.cornerNumbers.join(', ')}. Pays 8:1.`;
+  } else if (state.cornerNumbers.length === 4) {
+    cornerBetHelp.textContent = 'These numbers do not form a corner. Click selected numbers to change them.';
+  } else {
+    cornerBetHelp.textContent = `Select four adjacent numbers (${state.cornerNumbers.length}/4). Pays 8:1.`;
+  }
+}
+
+function toggleCornerNumber(number) {
+  if (number === 0) {
+    cornerBetHelp.textContent = 'Zero cannot be included in a corner bet.';
+    return;
+  }
+
+  const selectedIndex = state.cornerNumbers.indexOf(number);
+  if (selectedIndex >= 0) {
+    state.cornerNumbers.splice(selectedIndex, 1);
+  } else if (state.cornerNumbers.length < 4) {
+    state.cornerNumbers.push(number);
+  } else {
+    cornerBetHelp.textContent = 'Four numbers are selected. Click a selected number to change it.';
+    return;
+  }
+
+  updateCornerBetMode();
+  updateSelectedNumberCell();
+}
+
+function toggleCornerBetMode() {
+  state.cornerBetMode = !state.cornerBetMode;
+  state.cornerNumbers = [];
+  state.selectedNumber = null;
+  if (state.cornerBetMode) {
+    state.activeBet = { type: 'corner', value: 'corner' };
+  } else {
+    state.activeBet = { type: 'straight', value: 'straight' };
+  }
+  updateCornerBetMode();
+  updateSelectedNumberCell();
 }
 
 function updateWinningNumberCell(number, winnerInitials = []) {
@@ -428,7 +525,7 @@ function renderBetList() {
 function renderHistory() {
   historyList.innerHTML = '';
 
-  state.history.slice(0, 10).forEach((entry) => {
+  state.history.slice(0, 20).forEach((entry) => {
     const item = document.createElement('li');
     item.className = 'history-item';
 
@@ -452,6 +549,12 @@ function renderHistory() {
       betLine.textContent = `${bet.playerName}: ${formatBetLabel(bet)} ${formatCurrency(bet.amount)} • ${bet.won ? `Won ${formatCurrency(bet.profit)}` : `Lost ${formatCurrency(bet.amount)}`}`;
       bets.appendChild(betLine);
     });
+    if (entry.isSample) {
+      const sampleLabel = document.createElement('span');
+      sampleLabel.className = 'history-bet';
+      sampleLabel.textContent = 'Initial sample';
+      bets.appendChild(sampleLabel);
+    }
     details.appendChild(bets);
     item.appendChild(details);
 
@@ -460,6 +563,11 @@ function renderHistory() {
 }
 
 function setActiveBetType(button) {
+  if (state.cornerBetMode) {
+    state.cornerBetMode = false;
+    state.cornerNumbers = [];
+    updateCornerBetMode();
+  }
   document.querySelectorAll('.bet-choice').forEach((element) => {
     element.classList.toggle('active', element === button);
   });
@@ -493,17 +601,29 @@ function placeCurrentBet() {
     alert('Select a number before placing a straight bet.');
     return;
   }
+  if (state.activeBet.type === 'corner' && !isValidCornerSelection(state.cornerNumbers)) {
+    alert('Select exactly four numbers that form a corner on the roulette table.');
+    return;
+  }
 
   const newBet = {
     id: Date.now() + Math.random(),
     type: state.activeBet.type,
     value: state.activeBet.value,
     amount,
-    number: state.activeBet.type === 'straight' ? state.selectedNumber : null
+    number: state.activeBet.type === 'straight' ? state.selectedNumber : null,
+    numbers: state.activeBet.type === 'corner' ? [...state.cornerNumbers] : null
   };
 
   player.bets.push(newBet);
   player.balance -= amount;
+  if (state.activeBet.type === 'corner') {
+    state.cornerBetMode = false;
+    state.cornerNumbers = [];
+    state.activeBet = { type: 'straight', value: 'straight' };
+    updateCornerBetMode();
+    updateSelectedNumberCell();
+  }
   renderBalance();
   renderBetList();
   renderPlayers();
@@ -553,9 +673,10 @@ function spinWheel() {
     state.history.unshift({
       number: winningNumber,
       color: winningColor,
-      bets: spinInfo.betResults
+      bets: spinInfo.betResults,
+      isSample: false
     });
-    state.history = state.history.slice(0, 10);
+    state.history = state.history.slice(0, 20);
 
     if (spinInfo.totalWin > 0) {
       spinSummary.textContent = `Players won ${formatCurrency(spinInfo.totalWin)} total profit. Total return: ${formatCurrency(spinInfo.totalPayout)}.`;
@@ -589,6 +710,7 @@ function spinWheel() {
 
 function getPayoutMultiplier(bet, winningNumber) {
   if (bet.type === 'straight') return bet.number === winningNumber ? 35 : 0;
+  if (bet.type === 'corner') return bet.numbers.includes(winningNumber) ? 8 : 0;
   if (bet.type === 'color') return getColor(winningNumber) === bet.value ? 1 : 0;
   if (bet.type === 'parity') {
     if (winningNumber === 0) return 0;
@@ -700,7 +822,8 @@ function repeatPreviousBets() {
       type: previousBet.type,
       value: previousBet.value,
       amount: previousBet.amount,
-      number: previousBet.number
+      number: previousBet.number,
+      numbers: previousBet.numbers ? [...previousBet.numbers] : null
     });
     player.balance -= previousBet.amount;
   });
@@ -712,11 +835,10 @@ function repeatPreviousBets() {
 }
 
 function clearBets() {
-  state.players.forEach((player) => {
-    const refund = player.bets.reduce((total, bet) => total + bet.amount, 0);
-    player.bets = [];
-    player.balance += refund;
-  });
+  const player = getCurrentPlayer();
+  const refund = player.bets.reduce((total, bet) => total + bet.amount, 0);
+  player.bets = [];
+  player.balance += refund;
   renderBalance();
   renderPlayers();
   updateBetHighlights();
@@ -746,6 +868,7 @@ spinBtn.addEventListener('click', spinWheel);
 clearBetsBtn.addEventListener('click', clearBets);
 repeatBetsBtn.addEventListener('click', repeatPreviousBets);
 applyInitialBalancesBtn.addEventListener('click', applyInitialBalances);
+cornerBetBtn.addEventListener('click', toggleCornerBetMode);
 
 createWheelLabels();
 buildRouletteBoard();
