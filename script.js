@@ -11,6 +11,7 @@ const playerCards = document.getElementById('playerCards');
 const rouletteBoard = document.getElementById('rouletteBoard');
 const betList = document.getElementById('betList');
 const historyList = document.getElementById('historyList');
+const numberFrequencyBody = document.getElementById('numberFrequencyBody');
 const betAmountInput = document.getElementById('betAmount');
 const clearBetsBtn = document.getElementById('clearBetsBtn');
 const repeatBetsBtn = document.getElementById('repeatBetsBtn');
@@ -64,6 +65,7 @@ const state = {
     even: 0,
     low: 0,
     high: 0,
+    numberFrequency: Array(37).fill(0),
     total: 0
   }
 };
@@ -126,6 +128,7 @@ function runInitialProbabilitySample() {
   const sampledSpins = [];
   for (let spin = 0; spin < 1000; spin += 1) {
     const number = Math.floor(Math.random() * 37);
+    state.sample.numberFrequency[number] += 1;
     sampledSpins.push({
       number,
       color: getColor(number),
@@ -142,7 +145,40 @@ function runInitialProbabilitySample() {
 
   state.history = sampledSpins.slice(-20).reverse();
   renderHistory();
+  renderNumberFrequency();
   renderSampleStatistics();
+}
+
+function renderNumberFrequency() {
+  numberFrequencyBody.innerHTML = '';
+  const numberGroups = [
+    Array.from({ length: 13 }, (_, index) => index),
+    Array.from({ length: 12 }, (_, index) => index + 13),
+    Array.from({ length: 12 }, (_, index) => index + 25)
+  ];
+
+  for (let row = 0; row < 13; row += 1) {
+    const tableRow = document.createElement('tr');
+    numberGroups.forEach((group) => {
+      const numberCell = document.createElement('th');
+      numberCell.scope = 'row';
+      const frequencyCell = document.createElement('td');
+      const number = group[row];
+
+      if (number !== undefined) {
+        numberCell.textContent = String(number);
+        frequencyCell.textContent = String(state.sample.numberFrequency[number]);
+      } else {
+        numberCell.textContent = '';
+        frequencyCell.textContent = '';
+        numberCell.setAttribute('aria-hidden', 'true');
+        frequencyCell.setAttribute('aria-hidden', 'true');
+      }
+
+      tableRow.append(numberCell, frequencyCell);
+    });
+    numberFrequencyBody.appendChild(tableRow);
+  }
 }
 
 function renderSampleStatistics() {

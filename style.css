@@ -1100,6 +1100,44 @@ h1 {
   margin-bottom: 12px;
 }
 
+.number-frequency-section {
+  margin-top: 18px;
+}
+
+.number-frequency-section h4 {
+  margin: 0 0 8px;
+  color: #7f1d1d;
+  font-size: 0.9rem;
+}
+
+.number-frequency-scroll {
+  overflow-x: auto;
+}
+
+.number-frequency-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #7f1d1d;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.number-frequency-table th,
+.number-frequency-table td {
+  padding: 5px 8px;
+  border: 1px solid rgba(127, 29, 29, 0.2);
+}
+
+.number-frequency-table thead th {
+  background: rgba(127, 29, 29, 0.08);
+  font-weight: 800;
+}
+
+.number-frequency-table tbody th {
+  width: 8%;
+  font-weight: 800;
+}
+
 .history-list {
   display: flex;
   flex-wrap: wrap;
